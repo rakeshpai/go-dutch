@@ -4,11 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint .",
+    "dev": "vite",
+    "build": "vite build",
+    "test": "pnpm check:test",
+    "lint": "pnpm check:lint",
     "format": "prettier --write .",
+    "preview": "vite preview",
     "prepare": "husky",
-    "checks": "turbo lint test check-types"
+    "check:lint": "eslint .",
+    "check:types": "tsc --noEmit",
+    "check:test": "echo \"Error: no test specified\"",
+    "checks": "pnpm run \"/^check:.*/\"",
+    "prebuild": "pnpm run checks"
   },
   "keywords": [],
   "author": "Rakesh Pai",
@@ -28,8 +35,9 @@
     "globals": "^15.14.0",
     "husky": "^9.1.7",
     "prettier": "^3.4.2",
-    "turbo": "^2.3.3",
-    "typescript-eslint": "^8.18.2"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.2",
+    "vite": "^6.0.6"
   },
   "commitlint": {
     "extends": [
