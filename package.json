@@ -1,0 +1,39 @@
+{
+  "name": "godutch5",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "prepare": "husky",
+    "checks": "turbo lint test check-types"
+  },
+  "keywords": [],
+  "author": "Rakesh Pai",
+  "license": "ISC",
+  "type": "module",
+  "engines": {
+    "node": ">=22.11.0"
+  },
+  "packageManager": "pnpm@9.12.3",
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^15.14.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript-eslint": "^8.18.2"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  }
+}
