@@ -18,9 +18,7 @@ const vitePluginSw = (): Plugin => {
   };
 
   const injectManifestIntoSw = async (bundle: Rollup.OutputBundle) => {
-    console.log('injectManifestIntoSw', bundle);
-
-    const manifestString = (() => {
+    const createManifestString = (() => {
       const m = JSON.stringify(
         Object.entries(bundle)
           .filter(
@@ -37,7 +35,10 @@ const vitePluginSw = (): Plugin => {
       Object.values(bundle).map(async file => {
         if (file.type !== 'chunk') return;
 
-        const injected = file.code.replace('"##SW_ASSETS##"', manifestString);
+        const injected = file.code.replace(
+          '"##SW_ASSETS##"',
+          createManifestString,
+        );
 
         await writeFile(
           resolve(
@@ -51,6 +52,30 @@ const vitePluginSw = (): Plugin => {
     );
   };
 
+  const fixSwEntry = async (bundle: Rollup.OutputBundle) => {
+    const swEntry = Object.keys(bundle).find(
+      f => f.startsWith('sw-') && f.endsWith('.js'),
+    );
+    if (!swEntry) return;
+
+    const indexJsFile = Object.entries(bundle).find(
+      ([f]) => f.startsWith('index-') && f.endsWith('.js'),
+    )?.[1];
+
+    if (!indexJsFile || indexJsFile.type !== 'chunk') return;
+
+    const fixedSwEntry = indexJsFile.code.replace('##SW_PATH##', swEntry);
+
+    await writeFile(
+      resolve(
+        resolvedConfig.root,
+        resolvedConfig.build.outDir,
+        indexJsFile.fileName,
+      ),
+      fixedSwEntry,
+    );
+  };
+
   return {
     name: 'vite-plugin-sw',
     config(config) {
@@ -60,28 +85,35 @@ const vitePluginSw = (): Plugin => {
         index: 'index.html',
         sw: dummySwHtml,
       };
+      config.build.assetsDir = '.';
+      config.build.modulePreload = false;
     },
     configResolved(config) {
       resolvedConfig = config;
-      // console.log('dummy-sw configResolved', config);
     },
-    transform(code, id) {
-      console.log('dummy-sw transform', id);
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url !== '/sw-entry-point.js') return next();
+
+        res.writeHead(200, {
+          'Content-Type': 'text/javascript',
+          'Service-Worker-Allowed': '/',
+        });
+        res.end(
+          `import './service-worker/index.js';\nexport default () => {};\n`,
+        );
+      });
     },
-    // generateBundle(_, _bundle) {
-    //   bundle = _bundle;
-    //   // return null;
-    // },
     async writeBundle(options, bundle) {
-      await deleteBuiltDummyHTML();
-      await injectManifestIntoSw(bundle);
+      await Promise.all([
+        deleteBuiltDummyHTML(),
+        injectManifestIntoSw(bundle),
+        fixSwEntry(bundle),
+      ]);
     },
   };
 };
 
 export default defineConfig({
   plugins: [vitePluginSw()],
-  build: {
-    sourcemap: true,
-  },
 });
