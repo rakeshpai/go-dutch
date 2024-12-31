@@ -8,5 +8,8 @@ register(
       // TODO: Handle cursor position, scroll position, form state, etc.
       window.location.reload();
     },
+    ready() {
+      // registration.
+    },
   },
 );
