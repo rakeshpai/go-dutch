@@ -5,6 +5,8 @@ import { unlink, writeFile } from 'node:fs/promises';
 
 const vitePluginSw = (): Plugin => {
   const dummySwHtml = 'sw-inject.html';
+  const swFilePrefix = 'sw';
+
   let resolvedConfig;
 
   const deleteBuiltDummyHTML = async () => {
@@ -54,7 +56,7 @@ const vitePluginSw = (): Plugin => {
 
   const fixSwEntry = async (bundle: Rollup.OutputBundle) => {
     const swEntry = Object.keys(bundle).find(
-      f => f.startsWith('sw-') && f.endsWith('.js'),
+      f => f.startsWith(`${swFilePrefix}-`) && f.endsWith('.js'),
     );
     if (!swEntry) return;
 

@@ -1,2 +1,87 @@
-<p>Hello world</p>
-<script src="src/index.ts" type="module"></script>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading...</title>
+    <style>
+      /* Define the "system" font family */
+      @font-face {
+        font-family: system-ui;
+        font-style: normal;
+        font-weight: 300;
+        src: local('.SFNSText-Light'),
+          local('.HelveticaNeueDeskInterface-Light'), local('.LucidaGrandeUI'),
+          local('Ubuntu Light'), local('Segoe UI Light'), local('Roboto-Light'),
+          local('DroidSans'), local('Tahoma');
+      }
+
+      html {
+        color-scheme: light dark;
+      }
+
+      html,
+      body {
+        min-height: 100dvh;
+        display: grid;
+        font-family: 'system-ui';
+      }
+
+      .app-loader {
+        max-width: max-content;
+        place-self: center;
+        text-align: center;
+      }
+
+      .app-loader h1 {
+        font-weight: 300;
+      }
+
+      progress {
+        --track-height: 5px;
+        position: relative;
+        appearance: none;
+        height: var(--track-height);
+        width: 400px;
+        max-width: 80%;
+        border: none;
+        border-radius: var(--track-height);
+        overflow: hidden;
+      }
+
+      progress::-webkit-progress-bar {
+        background: light-dark(#eee, #333);
+      }
+
+      progress::after {
+        content: '';
+        position: absolute;
+        height: var(--track-height);
+        top: 0;
+        background: green;
+        animation: progress-anim 1.5s infinite ease-in-out;
+      }
+
+      @keyframes progress-anim {
+        0% {
+          left: 0;
+          width: 0;
+        }
+        50% {
+          width: 100%;
+        }
+        100% {
+          right: 0;
+          width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-loader">
+      <h1>Just a moment</h1>
+      <progress />
+    </div>
+    <script src="src/index.ts" type="module"></script>
+  </body>
+</html>
