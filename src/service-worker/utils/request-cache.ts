@@ -1,4 +1,4 @@
-const withCache = async <T>(fn: (cache: Cache) => T): Promise<T> => {
+const withCache = async <T>(fn: (cache: Cache) => Promise<T>): Promise<T> => {
   return caches.open('app-cache').then(fn);
 };
 

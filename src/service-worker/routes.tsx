@@ -6,10 +6,7 @@ const createRouter = (buildAssets: string[]) => {
   const app = new Hono();
 
   buildAssets.map(asset => {
-    app.get('/' + asset, async c => {
-      const res = await getFromCache(c.req.url);
-      return res;
-    });
+    app.get('/' + asset, c => getFromCache(c.req.url));
   });
 
   app.get('/', c => {

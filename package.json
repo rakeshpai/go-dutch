@@ -35,6 +35,8 @@
     "globals": "^15.14.0",
     "hono": "^4.6.15",
     "husky": "^9.1.7",
+    "open-props": "^1.7.10",
+    "postcss-jit-props": "^1.0.15",
     "prettier": "^3.4.2",
     "register-service-worker": "^1.7.2",
     "typescript": "^5.7.2",
