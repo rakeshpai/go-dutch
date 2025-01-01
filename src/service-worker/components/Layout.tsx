@@ -1,28 +1,27 @@
 import { FC } from 'hono/jsx';
 import { JSX } from 'hono/jsx/jsx-runtime';
+import stylesheet from '../app.css?inline';
+import indexScriptUrl from '../../index.ts?inline';
+import { raw } from 'hono/html';
+import { isDevMode } from '../utils/utils';
 
 type Props = {
   title: string;
-  buildAssets: string[];
   children: JSX.Element;
 };
 
-const Layout: FC<Props> = ({ title, buildAssets, children }) => {
-  const pageScriptUrl = buildAssets.find(
-    a => a.startsWith('index-') && a.endsWith('.js'),
-  );
-  const cssUrl = buildAssets.find(
-    a => a.startsWith('sw-') && a.endsWith('.css'),
-  );
-
+const Layout: FC<Props> = ({ title, children }) => {
   return (
     <html>
       <head>
-        <title>{title}</title>
-        <link rel="stylesheet" href={cssUrl} />
+        {isDevMode && <script type="module" src="/@vite/client" />}
+        <title>
+          {title} {isDevMode ? 'yes' : 'no'}
+        </title>
+        <style>{raw(stylesheet)}</style>
       </head>
       {children}
-      <script type="module" src={pageScriptUrl} />
+      <script>{indexScriptUrl}</script>
     </html>
   );
 };

@@ -8,9 +8,7 @@ const createRouter = (buildAssets: string[]) => {
   const app = new Hono();
 
   const wrapInLayout = <T extends JSX.Element>(title: string, component: T) => (
-    <Layout title={title} buildAssets={buildAssets}>
-      {component}
-    </Layout>
+    <Layout title={title}>{component}</Layout>
   );
 
   buildAssets.map(asset => {
@@ -20,9 +18,15 @@ const createRouter = (buildAssets: string[]) => {
   app.get('/', async c => {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
-      return c.render(wrapInLayout('Get started', <div>Hello world</div>));
+      return c.render(
+        wrapInLayout('Get started', <div>Hello world with layout</div>),
+      );
     }
     return c.render('Hello world without layout');
+  });
+
+  app.notFound(async c => {
+    return fetch(c.req.url);
   });
 
   return app;

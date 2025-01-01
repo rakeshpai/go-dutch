@@ -1,23 +1,10 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { Plugin, Rollup } from 'vite';
-import { unlink, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 
 const vitePluginSw = (): Plugin => {
-  const dummySwHtml = 'sw-inject.html';
-  const swFilePrefix = 'sw';
-
   let resolvedConfig;
-
-  const deleteBuiltDummyHTML = async () => {
-    const generatedDummyHtmlPath = resolve(
-      resolvedConfig.root,
-      resolvedConfig.build.outDir,
-      dummySwHtml,
-    );
-
-    await unlink(generatedDummyHtmlPath);
-  };
 
   const injectManifestIntoSw = async (bundle: Rollup.OutputBundle) => {
     const createManifestString = (() => {
@@ -35,12 +22,11 @@ const vitePluginSw = (): Plugin => {
 
     await Promise.all(
       Object.values(bundle).map(async file => {
-        if (file.type !== 'chunk') return;
+        if (!file.fileName.endsWith('js')) return;
 
-        const injected = file.code.replace(
-          '"##SW_ASSETS##"',
-          createManifestString,
-        );
+        const injected = (
+          file.type === 'asset' ? file.source.toString() : file.code
+        ).replace('"##SW_ASSETS##"', createManifestString);
 
         await writeFile(
           resolve(
@@ -54,68 +40,36 @@ const vitePluginSw = (): Plugin => {
     );
   };
 
-  const fixSwEntry = async (bundle: Rollup.OutputBundle) => {
-    const swEntry = Object.keys(bundle).find(
-      f => f.startsWith(`${swFilePrefix}-`) && f.endsWith('.js'),
-    );
-    if (!swEntry) return;
-
-    const indexJsFile = Object.entries(bundle).find(
-      ([f]) => f.startsWith('index-') && f.endsWith('.js'),
-    )?.[1];
-
-    if (!indexJsFile || indexJsFile.type !== 'chunk') return;
-
-    const fixedSwEntry = indexJsFile.code.replace('##SW_PATH##', swEntry);
-
-    await writeFile(
-      resolve(
-        resolvedConfig.root,
-        resolvedConfig.build.outDir,
-        indexJsFile.fileName,
-      ),
-      fixedSwEntry,
-    );
-  };
-
   return {
     name: 'vite-plugin-sw',
-    config(config) {
-      config.build = config.build ?? {};
-      config.build.rollupOptions = config.build.rollupOptions ?? {};
-      config.build.rollupOptions.input = {
-        index: 'index.html',
-        sw: dummySwHtml,
-      };
-      config.build.assetsDir = '.';
-      config.build.modulePreload = false;
-    },
     configResolved(config) {
       resolvedConfig = config;
     },
-    configurePreviewServer(server) {
+    configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req.url !== '/sw-entry-point.js') return next();
-
-        res.writeHead(200, {
-          'Content-Type': 'text/javascript',
-          'Service-Worker-Allowed': '/',
-        });
-        res.end(
-          `import './service-worker/index.js';\nexport default () => {};\n`,
-        );
+        if (req.url?.startsWith('/src/service-worker/index.ts')) {
+          res.setHeader('Service-Worker-Allowed', '/');
+        }
+        next();
       });
     },
+    transform(src) {
+      if (resolvedConfig.command === 'build') return src;
+      return src.replace('"##SW_ASSETS##"', '');
+    },
     async writeBundle(options, bundle) {
-      await Promise.all([
-        deleteBuiltDummyHTML(),
-        injectManifestIntoSw(bundle),
-        fixSwEntry(bundle),
-      ]);
+      await injectManifestIntoSw(bundle);
     },
   };
 };
 
 export default defineConfig({
   plugins: [vitePluginSw()],
+  build: {
+    assetsDir: '.', // This ensures that the service worker's scope is root
+    assetsInlineLimit: 0,
+  },
+  worker: {
+    format: 'iife',
+  },
 });

@@ -1,6 +1,5 @@
 /// <reference lib="WebWorker" />
 import { handle } from 'hono/service-worker';
-import '../app.css';
 import createApp from './routes';
 import { addToCache, cleanUpCache } from './utils/request-cache';
 
@@ -24,10 +23,6 @@ self.addEventListener('install', event => {
     })(),
   );
   // await self.clients.claim();
-});
-
-self.addEventListener('sync', e => {
-  log('Service Worker Sync', e);
 });
 
 self.addEventListener('activate', async event => {
