@@ -7,7 +7,7 @@ const vitePluginSw = (): Plugin => {
   let resolvedConfig;
 
   const injectManifestIntoSw = async (bundle: Rollup.OutputBundle) => {
-    const createManifestString = (() => {
+    const manifestString = (() => {
       const m = JSON.stringify(
         Object.entries(bundle)
           .filter(
@@ -26,7 +26,7 @@ const vitePluginSw = (): Plugin => {
 
         const injected = (
           file.type === 'asset' ? file.source.toString() : file.code
-        ).replace('"##SW_ASSETS##"', createManifestString);
+        ).replace('"##SW_ASSETS##"', manifestString);
 
         await writeFile(
           resolve(
@@ -42,12 +42,22 @@ const vitePluginSw = (): Plugin => {
 
   return {
     name: 'vite-plugin-sw',
+    config(config) {
+      config.build = config.build || {};
+      config.build.assetsDir = '.';
+      config.build.assetsInlineLimit = 0;
+      config.worker = config.worker || {};
+      config.worker.format = 'iife';
+      config.worker.rollupOptions = config.worker.rollupOptions || {};
+      config.worker.rollupOptions.output = {};
+      config.worker.rollupOptions.output.entryFileNames = '[name].js';
+    },
     configResolved(config) {
       resolvedConfig = config;
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (req.url?.startsWith('/src/service-worker/index.ts')) {
+        if (req.url?.startsWith('/src/service-worker/sw.ts')) {
           res.setHeader('Service-Worker-Allowed', '/');
         }
         next();
@@ -65,11 +75,4 @@ const vitePluginSw = (): Plugin => {
 
 export default defineConfig({
   plugins: [vitePluginSw()],
-  build: {
-    assetsDir: '.', // This ensures that the service worker's scope is root
-    assetsInlineLimit: 0,
-  },
-  worker: {
-    format: 'iife',
-  },
 });

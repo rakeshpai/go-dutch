@@ -1,15 +1,15 @@
-import { register } from 'register-service-worker';
-import swScript from './service-worker/index?worker&url';
+import swScript from './service-worker/sw?worker&url';
 
-register(swScript, {
-  registrationOptions: { scope: '/', type: 'module' },
-  updated() {
-    // TODO: Handle cursor position, scroll position, form state, etc.
-    // window.location.reload();
-  },
-  ready() {
-    // registration.
-  },
+const registration = await navigator.serviceWorker.register(swScript, {
+  scope: '/',
+  type: 'module',
 });
+
+if (import.meta.hot) {
+  import.meta.hot.on('vite:beforeFullReload', () => {
+    // registration.update();
+    console.log('beforefullreload', registration);
+  });
+}
 
 export default {};

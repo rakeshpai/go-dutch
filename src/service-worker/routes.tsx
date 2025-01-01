@@ -8,7 +8,9 @@ const createRouter = (buildAssets: string[]) => {
   const app = new Hono();
 
   const wrapInLayout = <T extends JSX.Element>(title: string, component: T) => (
-    <Layout title={title}>{component}</Layout>
+    <Layout title={title} buildAssets={buildAssets}>
+      {component}
+    </Layout>
   );
 
   buildAssets.map(asset => {
