@@ -1,11 +1,13 @@
 import { FC } from 'hono/jsx';
+import { JSX } from 'hono/jsx/jsx-runtime';
 
 type Props = {
   title: string;
   buildAssets: string[];
+  children: JSX.Element;
 };
 
-const Layout: FC<Props> = ({ title, buildAssets }) => {
+const Layout: FC<Props> = ({ title, buildAssets, children }) => {
   const pageScriptUrl = buildAssets.find(
     a => a.startsWith('index-') && a.endsWith('.js'),
   );
@@ -19,7 +21,7 @@ const Layout: FC<Props> = ({ title, buildAssets }) => {
         <title>{title}</title>
         <link rel="stylesheet" href={cssUrl} />
       </head>
-      <body>Hello world</body>
+      {children}
       <script type="module" src={pageScriptUrl} />
     </html>
   );
