@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import Layout from './components/Layout';
+import PageContainer from './components/PageContainer';
 import { getFromCache } from './utils/request-cache';
 import { getCurrentUser } from './lib/user';
 import { JSX } from 'hono/jsx/jsx-runtime';
@@ -8,9 +8,9 @@ const createRouter = (buildAssets: string[]) => {
   const app = new Hono();
 
   const wrapInLayout = <T extends JSX.Element>(title: string, component: T) => (
-    <Layout title={title} buildAssets={buildAssets}>
+    <PageContainer title={title} buildAssets={buildAssets}>
       {component}
-    </Layout>
+    </PageContainer>
   );
 
   buildAssets.map(asset => {

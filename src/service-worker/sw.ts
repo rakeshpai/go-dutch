@@ -7,22 +7,13 @@ declare const self: ServiceWorkerGlobalScope;
 
 const buildAssets = ['##SW_ASSETS##'];
 
-const log = (...args: unknown[]) => {
-  console.log('sw:', ...args);
-};
-
-log('Service Worker Loaded', buildAssets);
-
 self.addEventListener('install', event => {
-  log('Service Worker Activated');
-
   event.waitUntil(
     (async () => {
       await addToCache(buildAssets);
       await self.skipWaiting();
     })(),
   );
-  // await self.clients.claim();
 });
 
 self.addEventListener('activate', async event => {

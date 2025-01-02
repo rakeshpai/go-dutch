@@ -1,7 +1,6 @@
 import { FC } from 'hono/jsx';
 import { JSX } from 'hono/jsx/jsx-runtime';
 import stylesheet from '../app.css?inline';
-// import indexScriptUrl from '../../index.ts?inline';
 import { raw } from 'hono/html';
 import { isDevMode } from '../utils/utils';
 
@@ -11,7 +10,7 @@ type Props = {
   buildAssets: string[];
 };
 
-const Layout: FC<Props> = ({ title, children, buildAssets }) => {
+const PageContainer: FC<Props> = ({ title, children, buildAssets }) => {
   const rootScriptPath = buildAssets.find(
     asset => asset.startsWith('index') && asset.endsWith('.js'),
   );
@@ -20,15 +19,16 @@ const Layout: FC<Props> = ({ title, children, buildAssets }) => {
     <html>
       <head>
         {isDevMode && <script type="module" src="/@vite/client" />}
-        <title>
-          {title} {isDevMode ? 'yes' : 'no'}
-        </title>
+        <title>{title}</title>
         <style>{raw(stylesheet)}</style>
       </head>
       {children}
-      {rootScriptPath && <script src={'/' + rootScriptPath}></script>}
+      <script
+        src={rootScriptPath ? '/' + rootScriptPath : '/src/index.ts'}
+        type="module"
+      ></script>
     </html>
   );
 };
 
-export default Layout;
+export default PageContainer;
