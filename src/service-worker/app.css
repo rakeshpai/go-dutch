@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @font-face {
   font-family: system-ui;
   font-style: normal;
@@ -15,5 +19,35 @@ html,
 body {
   min-height: 100dvh;
   font-family: 'system-ui';
-  color: light-dark(var(--gray-12), var(--gray-1));
+  color: light-dark(#030507, #f1f3f5);
+}
+
+input,
+select {
+  font-size: 1.3rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid light-dark(rgb(228, 228, 231), rgb(39, 39, 42));
+  border-radius: 0.75rem;
+  @apply text-primary;
+
+  &:focus-visible {
+    outline-offset: 1px;
+    @apply border-primary outline-primary;
+  }
+}
+
+button {
+  font-family: 'system-ui';
+  font-size: 1.3rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid light-dark(rgb(228, 228, 231), rgb(39, 39, 42));
+  border-radius: 0.75rem;
+  font-weight: 600;
+  @apply text-primary-inverted bg-page-bg-inverted;
+
+  &:focus-visible {
+    outline-offset: 1px;
+    @apply outline-primary text-secondary;
+  }
 }

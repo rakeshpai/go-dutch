@@ -2,7 +2,7 @@ import { FC } from 'hono/jsx';
 import { JSX } from 'hono/jsx/jsx-runtime';
 import stylesheet from '../app.css?inline';
 import { raw } from 'hono/html';
-import { isDevMode } from '../utils/utils';
+import { isDevMode } from '../utils/statics';
 
 type Props = {
   title: string;

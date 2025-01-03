@@ -1,8 +1,9 @@
 import { Hono } from 'hono';
 import PageContainer from './components/PageContainer';
 import { getFromCache } from './utils/request-cache';
-import { getCurrentUser } from './lib/user';
+import { getCurrentUser, createUser } from './lib/user';
 import { JSX } from 'hono/jsx/jsx-runtime';
+import FirstLoad from './components/FirstLoad';
 
 const createRouter = (buildAssets: string[]) => {
   const app = new Hono();
@@ -20,11 +21,17 @@ const createRouter = (buildAssets: string[]) => {
   app.get('/', async c => {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
-      return c.render(
-        wrapInLayout('Get started', <div>Hello world with layout</div>),
-      );
+      return c.render(wrapInLayout('Get started', <FirstLoad />));
     }
-    return c.render('Hello world without layout');
+    return c.render(
+      wrapInLayout('Dashboard', <div>Logged in as {currentUser.name}</div>),
+    );
+  });
+
+  app.post('/', async c => {
+    const body = await c.req.formData();
+    await createUser(body);
+    return c.redirect('/');
   });
 
   app.notFound(async c => {

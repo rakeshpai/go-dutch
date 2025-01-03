@@ -1,21 +1,22 @@
 import { dbPromise } from './db';
-import { z } from 'zod';
+import { currentUser } from './kv-store';
+import { nanoid } from 'nanoid';
 
-const User = z.object({
-  name: z.string(),
-});
-
-export const getCurrentUser = async () => {
-  try {
-    const db = await dbPromise;
-    const user = await db.get('kvStore', 'currentUser');
-    return user ? User.parse(user) : undefined;
-  } catch (e) {
-    console.log(e);
-  }
+const formDataToObject = (formData: FormData) => {
+  return Object.fromEntries(formData.entries());
 };
 
-export const setCurrentUser = async (user: z.infer<typeof User>) => {
+export const getCurrentUser = currentUser.get;
+
+export const createUser = async (formData: FormData) => {
+  const user = currentUser.schema
+    .omit({ id: true, key: true })
+    .parse(formDataToObject(formData));
+
   const db = await dbPromise;
-  return db.put('kvStore', user, 'currentUser');
+  await db.put(
+    'kvStore',
+    { id: nanoid(), key: nanoid(), ...user },
+    'currentUser',
+  );
 };
