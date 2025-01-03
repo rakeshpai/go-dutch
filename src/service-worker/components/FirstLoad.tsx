@@ -4,7 +4,7 @@ import CurrencyDropdown from './CurrencyDropdown';
 const FirstLoad: FC = () => {
   return (
     <div class="h-screen flex items-center justify-center">
-      <div>
+      <div class="max-w-lg mx-6">
         <h1 class="max-w-96 text-7xl">Go Dutch</h1>
         <form action="/" method="post" class="mt-8 flex flex-col gap-8">
           <div class="flex flex-col gap-2">

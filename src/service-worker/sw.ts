@@ -1,27 +1,24 @@
 /// <reference lib="WebWorker" />
 import { handle } from 'hono/service-worker';
-import createApp from './routes';
-import { addToCache, cleanUpCache } from './utils/request-cache';
+import { addAssetsToCache, cleanUpCache } from './utils/request-cache';
+import { setBuildAssets } from './utils/build-assets';
+import app from './routes';
 
 declare const self: ServiceWorkerGlobalScope;
 
-const buildAssets = ['##SW_ASSETS##'];
+setBuildAssets(['##SW_ASSETS##']);
 
 self.addEventListener('install', event => {
   event.waitUntil(
     (async () => {
-      await addToCache(buildAssets);
+      await addAssetsToCache();
       await self.skipWaiting();
     })(),
   );
 });
 
 self.addEventListener('activate', async event => {
-  event.waitUntil(
-    Promise.all([self.clients.claim(), cleanUpCache(buildAssets)]),
-  );
+  event.waitUntil(Promise.all([self.clients.claim(), cleanUpCache()]));
 });
-
-const app = createApp(buildAssets);
 
 self.addEventListener('fetch', handle(app));

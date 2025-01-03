@@ -12,8 +12,8 @@ export const dbPromise = openDB<AppDB>('app-db', 1, {
   upgrade(database, oldVersion) {
     switch (oldVersion) {
       case 0: {
-        const store = database.createObjectStore('kvStore');
-        store.createIndex('by-key', 'key', { unique: true });
+        const kvStore = database.createObjectStore('kvStore');
+        kvStore.createIndex('by-key', 'key', { unique: true });
       }
     }
   },

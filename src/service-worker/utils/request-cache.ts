@@ -1,3 +1,5 @@
+import { getBuildAssets } from './build-assets';
+
 const withCache = async <T>(fn: (cache: Cache) => Promise<T>): Promise<T> => {
   return caches.open('app-cache').then(fn);
 };
@@ -10,9 +12,9 @@ export const getFromCache = (request: RequestInfo | URL) => {
   Adds build assets to cache without deleting existing items in cache
   Call `cleanUpCache` separately to delete unused items
 */
-export const addToCache = async (buildAssets: string[]) => {
+export const addAssetsToCache = async () => {
   const assetsInCache = await Promise.all(
-    buildAssets.map(async asset => {
+    getBuildAssets().map(async asset => {
       return {
         asset,
         response: await caches.match(asset),
@@ -27,13 +29,13 @@ export const addToCache = async (buildAssets: string[]) => {
   return withCache(c => c.addAll(missingAssets));
 };
 
-export const cleanUpCache = async (buildAssets: string[]) => {
+export const cleanUpCache = async () => {
   return withCache(async c => {
     const cachedRequests = await c.keys();
 
     const deletable = cachedRequests.filter(request => {
       const buildAssetName = new URL(request.url).pathname.slice(1);
-      return !buildAssets.includes(buildAssetName);
+      return !getBuildAssets().includes(buildAssetName);
     });
 
     return Promise.all(deletable.map(d => c.delete(d)));
