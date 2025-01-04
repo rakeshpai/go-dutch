@@ -8,6 +8,7 @@ export default {
       secondary: 'light-dark(#060606, #aaa)',
       'page-bg': 'light-dark(#f1f1f1, #060606)',
       'page-bg-inverted': 'light-dark(#060606, #f1f1f1)',
+      seperator: 'light-dark(rgb(228, 228, 231), rgb(39, 39, 42))',
     },
   },
   plugins: [],

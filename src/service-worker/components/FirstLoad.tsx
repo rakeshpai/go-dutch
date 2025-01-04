@@ -41,7 +41,7 @@ const FirstLoad: FC = () => {
             </p>
           </div>
           <div>
-            <button type="submit">Get started</button>
+            <button type="submit">Get started &raquo;</button>
           </div>
         </form>
       </div>

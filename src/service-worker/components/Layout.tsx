@@ -16,20 +16,24 @@ const Layout: FC<Props> = async ({ title, children }) => {
 
   return (
     <PageContainer title={title}>
-      <div class="max-w-5xl mx-auto">
-        <header class="flex justify-between items-center py-4">
-          <a href="/" class="text-2xl">
-            Go Dutch
-          </a>
-          <dov>
-            <a href="/me" class="flex items-center gap-1">
-              <span class="block">{user.name}</span>
-              <Avatar size={48} name={user.name} id={user.id} />
-            </a>
-          </dov>
-        </header>
+      <>
+        <div class="border-b border-seperator">
+          <div class="px-4">
+            <header class="flex justify-between items-center py-4">
+              <a href="/" class="text-2xl">
+                Go Dutch
+              </a>
+              <dov>
+                <a href="/me" class="flex items-center gap-1">
+                  <span class="block">{user.name}</span>
+                  <Avatar size={48} name={user.name} id={user.id} />
+                </a>
+              </dov>
+            </header>
+          </div>
+        </div>
         {children}
-      </div>
+      </>
     </PageContainer>
   );
 };
