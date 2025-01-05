@@ -1,4 +1,6 @@
-import { DBSchema, openDB } from 'idb';
+import { DBSchema, IDBPDatabase, openDB } from 'idb';
+import { Group } from './groups';
+import { GroupId } from '../utils/branded-types';
 
 interface AppDB extends DBSchema {
   kvStore: {
@@ -6,15 +8,29 @@ interface AppDB extends DBSchema {
     value: unknown;
     indexes: { 'by-key': string };
   };
+  groups: {
+    value: Group;
+    key: GroupId;
+    indexes: { 'by-id': GroupId };
+  };
 }
 
+type MigrationStep = (db: IDBPDatabase<AppDB>) => Promise<void> | void;
+
+const migrations: MigrationStep[] = [
+  db => {
+    const kvStore = db.createObjectStore('kvStore');
+    kvStore.createIndex('by-key', 'key', { unique: true });
+
+    const groups = db.createObjectStore('groups', { keyPath: 'id' });
+    groups.createIndex('by-id', 'id', { unique: true });
+  },
+];
+
 export const dbPromise = openDB<AppDB>('app-db', 1, {
-  upgrade(database, oldVersion) {
-    switch (oldVersion) {
-      case 0: {
-        const kvStore = database.createObjectStore('kvStore');
-        kvStore.createIndex('by-key', 'key', { unique: true });
-      }
+  async upgrade(database, oldVersion) {
+    for await (const migrateStep of migrations.slice(oldVersion)) {
+      await migrateStep(database);
     }
   },
 });

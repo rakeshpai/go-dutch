@@ -1,5 +1,5 @@
 import { FC } from 'hono/jsx';
-import { UserId } from '../lib/user';
+import { UserId } from '../utils/branded-types';
 
 const palette: [color: string, isTextWhite: boolean][] = [
   ['purple', true],

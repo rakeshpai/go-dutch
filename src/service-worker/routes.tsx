@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import PageContainer from './components/PageContainer';
 import { getFromCache } from './utils/request-cache';
-import { getCurrentUser, createUser } from './lib/user';
+import { getCurrentUser, createUser, userPartialSchema } from './lib/user';
 import FirstLoad from './components/FirstLoad';
 import Layout from './components/Layout';
 import { getBuildAssets } from './utils/build-assets';
+import { formDataToObject } from './utils/utils';
 
 const app = new Hono();
 
@@ -30,7 +31,7 @@ app.get('/', async c => {
 
 app.post('/', async c => {
   const body = await c.req.formData();
-  await createUser(body);
+  await createUser(userPartialSchema.parse(formDataToObject(body)));
   return c.redirect('/');
 });
 
