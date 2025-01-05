@@ -2,7 +2,7 @@ import { DBSchema, IDBPDatabase, openDB } from 'idb';
 import { Group } from './groups';
 import { GroupId } from '../utils/branded-types';
 
-interface AppDB extends DBSchema {
+export interface AppDB extends DBSchema {
   kvStore: {
     key: string;
     value: unknown;
@@ -15,7 +15,7 @@ interface AppDB extends DBSchema {
   };
 }
 
-type MigrationStep = (db: IDBPDatabase<AppDB>) => Promise<void> | void;
+type MigrationStep = (db: IDBPDatabase<AppDB>) => void;
 
 const migrations: MigrationStep[] = [
   db => {
@@ -28,9 +28,9 @@ const migrations: MigrationStep[] = [
 ];
 
 export const dbPromise = openDB<AppDB>('app-db', 1, {
-  async upgrade(database, oldVersion) {
-    for await (const migrateStep of migrations.slice(oldVersion)) {
-      await migrateStep(database);
+  upgrade(database, oldVersion) {
+    for (const migrateStep of migrations.slice(oldVersion)) {
+      migrateStep(database);
     }
   },
 });

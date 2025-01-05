@@ -19,6 +19,8 @@ const currentUser = kvStoreItem(
     .strict(),
 );
 
+export type CurrentUser = z.infer<typeof currentUser.schema>;
+
 export const getCurrentUser = currentUser.get;
 
 export const userPartialSchema = currentUser.schema.pick({

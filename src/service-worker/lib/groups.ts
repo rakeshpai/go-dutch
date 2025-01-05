@@ -11,7 +11,7 @@ import {
 } from '../utils/branded-types';
 import { nanoid } from 'nanoid';
 import { dbPromise } from './db';
-import { getCurrentUser } from './user';
+import { CurrentUser, getCurrentUser } from './user';
 import { HTTPException } from 'hono/http-exception';
 
 const groupSchema = z.object({
@@ -36,7 +36,7 @@ const groupSchema = z.object({
         invitedId: invitedUserIdSchema,
         userId: userIdSchema,
         name: z.string(),
-        joinDate: z.date(),
+        joinedOn: z.date(),
       }),
     )
     .optional()
@@ -90,6 +90,34 @@ export const syncGroup = async (groupId: GroupId, key: GroupKey) => {
   console.log('Syncing group', groupId, key);
 };
 
+const removeFromPendingInvitations = (
+  pendingInvitations: Group['pendingInvitations'],
+  invitedUserId: InvitedUserId,
+) => {
+  return pendingInvitations.filter(invite => {
+    return invite.id !== invitedUserId;
+  });
+};
+
+const addToConfirmedUsers = (
+  confirmedUsers: Group['confirmedUsers'],
+  user: CurrentUser,
+  invitedUserId: InvitedUserId,
+) => {
+  const userAlreadyConfirmed = Boolean(
+    confirmedUsers.find(c => c.userId === user.id),
+  );
+
+  return userAlreadyConfirmed
+    ? confirmedUsers
+    : confirmedUsers.concat({
+        invitedId: invitedUserId,
+        userId: user.id,
+        name: user.name,
+        joinedOn: new Date(),
+      });
+};
+
 export const claimInvitation = async (
   groupId: GroupId,
   invitedUserId: InvitedUserId,
@@ -98,39 +126,28 @@ export const claimInvitation = async (
   if (!user) throw new HTTPException(401, { message: 'Not logged in' });
 
   const db = await dbPromise;
+  const txn = db.transaction('groups', 'readwrite');
 
-  const tx = db.transaction('groups', 'readwrite');
-
-  const group = await tx.store.get(groupId);
+  const group = await txn.store.get(groupId);
   if (!group) {
-    tx.abort();
+    txn.abort();
     throw new HTTPException(404, { message: 'Group not found' });
   }
 
-  const pendingInvitations = group.pendingInvitations.filter(invite => {
-    return invite.id !== invitedUserId;
-  });
-
-  const userAlreadyConfirmed = Boolean(
-    group.confirmedUsers.find(c => c.userId === user.id),
-  );
-
-  const confirmedUsers = userAlreadyConfirmed
-    ? group.confirmedUsers
-    : group.confirmedUsers.concat({
-        invitedId: invitedUserId,
-        userId: user.id,
-        name: user.name,
-        joinDate: new Date(),
-      });
-
   const updatedGroup = groupSchema.parse({
     ...group,
-    pendingInvitations,
-    confirmedUsers,
+    pendingInvitations: removeFromPendingInvitations(
+      group.pendingInvitations,
+      invitedUserId,
+    ),
+    confirmedUsers: addToConfirmedUsers(
+      group.confirmedUsers,
+      user,
+      invitedUserId,
+    ),
     modifiedOn: new Date(),
   });
 
-  await tx.store.put(updatedGroup, groupId);
-  return tx.done;
+  await txn.store.put(updatedGroup, groupId);
+  return txn.done;
 };
