@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import { AppDB, dbPromise } from './db';
-import { IDBPTransaction } from 'idb';
-
-type WriteableTransaction = IDBPTransaction<AppDB, ['kvStore'], 'readwrite'>;
+import { dbPromise, TransactionFor } from './db';
 
 export const kvStoreItem = <T extends z.ZodTypeAny>(
   key: string,
@@ -10,7 +7,7 @@ export const kvStoreItem = <T extends z.ZodTypeAny>(
 ) => {
   return {
     get: async (
-      txn?: IDBPTransaction<AppDB>,
+      txn?: TransactionFor<'kvStore', 'readonly'>,
     ): Promise<z.infer<T> | undefined> => {
       const valuePromise = txn
         ? txn.objectStore('kvStore').get(key)
@@ -19,7 +16,10 @@ export const kvStoreItem = <T extends z.ZodTypeAny>(
       const value = await valuePromise;
       return value ? zodSchema.parse(value) : undefined;
     },
-    set: async (value: z.infer<T>, txn?: WriteableTransaction) => {
+    set: async (
+      value: z.infer<T>,
+      txn?: TransactionFor<'kvStore', 'readwrite'>,
+    ) => {
       if (txn) {
         return txn.objectStore('kvStore').put(value, key);
       }
@@ -27,7 +27,7 @@ export const kvStoreItem = <T extends z.ZodTypeAny>(
       const db = await dbPromise;
       return db.put('kvStore', value, key);
     },
-    delete: async (txn?: WriteableTransaction) => {
+    delete: async (txn?: TransactionFor<'kvStore', 'readwrite'>) => {
       if (txn) {
         txn.objectStore('kvStore').delete(key);
       }
