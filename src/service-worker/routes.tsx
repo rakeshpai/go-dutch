@@ -33,7 +33,7 @@ app.get('/', async c => {
 app.post('/', async c => {
   const body = await c.req.formData();
   await createUser(userPartialSchema.parse(formDataToObject(body)));
-  return c.redirect('/');
+  return Response.redirect('/');
 });
 
 app.notFound(async c => {
