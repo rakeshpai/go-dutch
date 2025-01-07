@@ -51,7 +51,7 @@ export const getGroups = async () => {
 };
 
 const createGroupMutation = registerMutation(
-  'create-group',
+  'group:create',
   ['groups'],
   async (txn, { group }: { group: Group }) => {
     return txn.objectStore('groups').add(group, group.id);
@@ -104,7 +104,7 @@ export const claimInvitationSchema = z.object({
 });
 
 export const claimInvitation = registerMutation(
-  'claim-mutation',
+  'group:claim-mutation',
   ['groups', 'kvStore'],
   async (
     txn,

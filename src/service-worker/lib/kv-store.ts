@@ -29,7 +29,7 @@ export const kvStoreItem = <T extends z.ZodTypeAny>(
     },
     delete: async (txn?: TransactionFor<'kvStore', 'readwrite'>) => {
       if (txn) {
-        txn.objectStore('kvStore').delete(key);
+        return txn.objectStore('kvStore').delete(key);
       }
       const db = await dbPromise;
       return db.delete('kvStore', key);

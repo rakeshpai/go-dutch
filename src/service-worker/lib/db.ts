@@ -42,8 +42,8 @@ const migrations: MigrationStep[] = [
     groups.createIndex('by-id', 'id', { unique: true });
   },
   db => {
-    const syncLog = db.createObjectStore('syncLog');
-    syncLog.createIndex('by-time', 'loggedOn', { unique: true });
+    const syncLog = db.createObjectStore('syncLog', { keyPath: 'id' });
+    syncLog.createIndex('by-time', 'loggedAt');
   },
 ];
 

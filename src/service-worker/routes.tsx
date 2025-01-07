@@ -6,6 +6,7 @@ import FirstLoad from './components/FirstLoad';
 import Layout from './components/Layout';
 import { getBuildAssets } from './utils/build-assets';
 import { formDataToObject } from './utils/utils';
+import { HTTPException } from 'hono/http-exception';
 
 const app = new Hono();
 
@@ -37,6 +38,14 @@ app.post('/', async c => {
 
 app.notFound(async c => {
   return fetch(c.req.url);
+});
+
+app.onError(err => {
+  console.log(err);
+  if (err instanceof HTTPException) {
+    return err.getResponse();
+  }
+  return new Response('Internal server error', { status: 500 });
 });
 
 export default app;

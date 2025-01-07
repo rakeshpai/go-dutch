@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { dbPromise } from './db';
 import { kvStoreItem } from './kv-store';
 import { nanoid } from 'nanoid';
 import { HTTPException } from 'hono/http-exception';
 import { userIdSchema, userKeySchema } from '../utils/branded-types';
+import { registerMutation } from './mutations';
 
 const currentUser = kvStoreItem(
   'currentUser',
@@ -28,6 +28,14 @@ export const userPartialSchema = currentUser.schema.pick({
   currencyCode: true,
 });
 
+const createUserMutation = registerMutation(
+  'user:create',
+  ['kvStore'],
+  (txn, { user }: { user: CurrentUser }) => {
+    return currentUser.set(user, txn);
+  },
+);
+
 export const createUser = async (
   userPartial: z.infer<typeof userPartialSchema>,
 ) => {
@@ -35,32 +43,35 @@ export const createUser = async (
     throw new HTTPException(409, { message: 'User already exists' });
   }
 
-  const user = currentUser.schema.parse({
+  const user: CurrentUser = {
     id: userIdSchema.parse(nanoid()),
     key: userKeySchema.parse(nanoid()),
     ...userPartial,
     createdOn: new Date(),
     modifiedOn: new Date(),
-  });
+  };
 
-  const db = await dbPromise;
-  await db.put('kvStore', user, 'currentUser');
+  await createUserMutation({ user: currentUser.schema.parse(user) });
   return user;
 };
 
-export const updateUser = async (
-  userPartial: z.infer<typeof userPartialSchema>,
-) => {
-  const user = await getCurrentUser();
-  if (!user) throw new HTTPException(404, { message: 'User not found' });
+export const updateUser = registerMutation(
+  'user:update',
+  ['kvStore'],
+  async (txn, userPartial: z.infer<typeof userPartialSchema>) => {
+    const user = await getCurrentUser(txn);
+    if (!user) {
+      txn.abort();
+      throw new HTTPException(404, { message: 'User not found' });
+    }
 
-  const updatedUser = currentUser.schema.parse({
-    ...user,
-    ...userPartial,
-    modifiedOn: new Date(),
-  });
+    const updatedUser: CurrentUser = {
+      ...user,
+      ...userPartial,
+      modifiedOn: new Date(),
+    };
 
-  const db = await dbPromise;
-  await db.put('kvStore', updatedUser, 'currentUser');
-  return updatedUser;
-};
+    await currentUser.set(currentUser.schema.parse(updatedUser), txn);
+    return updatedUser;
+  },
+);
