@@ -7,6 +7,7 @@ import {
 } from 'idb';
 import { Group } from './groups';
 import { GroupId } from '../utils/branded-types';
+import { LedgerEntry } from './ledger';
 
 export interface AppDB extends DBSchema {
   kvStore: {
@@ -29,6 +30,11 @@ export interface AppDB extends DBSchema {
     key: string; // Using a unique ID as string to avoid `loggedAt` time clashes
     indexes: { 'by-time': Date };
   };
+  ledger: {
+    value: LedgerEntry;
+    key: number;
+    indexes: { 'by-group-and-date': [GroupId, Date] };
+  };
 }
 
 type MigrationStep = (db: IDBPDatabase<AppDB>) => void;
@@ -45,9 +51,13 @@ const migrations: MigrationStep[] = [
     const syncLog = db.createObjectStore('syncLog', { keyPath: 'id' });
     syncLog.createIndex('by-time', 'loggedAt');
   },
+  db => {
+    const ledger = db.createObjectStore('ledger', { keyPath: 'id' });
+    ledger.createIndex('by-group-and-date', ['groupId', 'date']);
+  },
 ];
 
-export const dbPromise = openDB<AppDB>('app-db', 1, {
+export const dbPromise = openDB<AppDB>('app-db', migrations.length, {
   upgrade(database, oldVersion) {
     for (const migrateStep of migrations.slice(oldVersion)) {
       migrateStep(database);
