@@ -1,3 +1,5 @@
+import { HTTPException } from 'hono/http-exception';
+
 export const formDataToObject = (formData: FormData) => {
   return Object.fromEntries(formData.entries());
 };
@@ -10,3 +12,11 @@ export const sha256 = async (message: string) => {
     .join('');
   return hashHex;
 };
+
+export function throwIfUndefined<T>(
+  value: T | undefined,
+  errorMessage: string,
+): asserts value is T {
+  if (value !== undefined) return;
+  throw new HTTPException(404, { message: errorMessage });
+}

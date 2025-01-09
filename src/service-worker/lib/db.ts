@@ -32,7 +32,7 @@ export interface AppDB extends DBSchema {
   };
   ledger: {
     value: LedgerEntry;
-    key: number;
+    key: string;
     indexes: { 'by-group-and-date': [GroupId, Date] };
   };
 }

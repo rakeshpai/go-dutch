@@ -4,6 +4,8 @@ import { nanoid } from 'nanoid';
 import { HTTPException } from 'hono/http-exception';
 import { userIdSchema, userKeySchema } from '../utils/branded-types';
 import { registerMutation } from './mutations';
+import { TransactionFor } from './db';
+import { throwIfUndefined } from '../utils/utils';
 
 const currentUser = kvStoreItem(
   'currentUser',
@@ -11,7 +13,7 @@ const currentUser = kvStoreItem(
     .object({
       id: userIdSchema,
       key: userKeySchema,
-      name: z.string().min(1),
+      name: z.string().trim().min(1),
       currencyCode: z.string(),
       createdOn: z.date(),
       modifiedOn: z.date(),
@@ -22,6 +24,13 @@ const currentUser = kvStoreItem(
 export type CurrentUser = z.infer<typeof currentUser.schema>;
 
 export const getCurrentUser = currentUser.get;
+export const requireUser = async (
+  txn?: TransactionFor<'kvStore', 'readonly'>,
+) => {
+  const user = await getCurrentUser(txn);
+  throwIfUndefined(user, 'User not found');
+  return user;
+};
 
 export const userPartialSchema = currentUser.schema.pick({
   name: true,
@@ -59,11 +68,7 @@ export const updateUser = registerMutation(
   'user:update',
   ['kvStore'],
   async (txn, userPartial: z.infer<typeof userPartialSchema>) => {
-    const user = await getCurrentUser(txn);
-    if (!user) {
-      txn.abort();
-      throw new HTTPException(404, { message: 'User not found' });
-    }
+    const user = await requireUser(txn);
 
     const updatedUser: CurrentUser = {
       ...user,

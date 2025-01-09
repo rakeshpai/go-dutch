@@ -9,18 +9,19 @@ import {
   userIdSchema,
 } from '../utils/branded-types';
 import { nanoid } from 'nanoid';
-import { dbPromise } from './db';
-import { getCurrentUser } from './user';
-import { HTTPException } from 'hono/http-exception';
+import { dbPromise, TransactionFor } from './db';
+import { requireUser } from './user';
 import { registerMutation } from './mutations';
+import { throwIfUndefined } from '../utils/utils';
 
 const groupSchema = z.object({
   id: groupIdSchema,
   key: groupKeySchema,
-  name: z.string().min(1),
+  name: z.string().trim().min(1),
   coverColor: z.string().optional(),
   createdBy: z.object({ id: userIdSchema, name: z.string() }),
   createdOn: z.date(),
+  lastModifiedBy: z.object({ id: userIdSchema, name: z.string() }),
   modifiedOn: z.date(),
   pendingInvitations: z.array(
     z.object({
@@ -41,8 +42,13 @@ const groupSchema = z.object({
 
 export type Group = z.infer<typeof groupSchema>;
 
-export const getGroup = (id: GroupId) => {
-  return dbPromise.then(db => db.get('groups', id));
+export const getGroup = (
+  id: GroupId,
+  txn?: TransactionFor<'groups', 'readonly'>,
+) => {
+  return txn
+    ? txn.objectStore('groups').get(id)
+    : dbPromise.then(db => db.get('groups', id));
 };
 
 export const getGroups = async () => {
@@ -69,21 +75,21 @@ export const createGroup = async ({
   coverColor,
   people = [],
 }: z.infer<typeof createGroupSchema>) => {
-  const user = await getCurrentUser();
-  if (!user) throw new HTTPException(401, { message: 'Not logged in' });
+  const user = await requireUser();
 
   const group: Group = {
     id: groupIdSchema.parse(nanoid()),
     key: groupKeySchema.parse(nanoid()),
     name: name,
     coverColor,
+    createdBy: { id: user.id, name: user.name },
     createdOn: new Date(),
+    lastModifiedBy: { id: user.id, name: user.name },
     modifiedOn: new Date(),
     pendingInvitations: people.map(name => ({
       id: invitedUserIdSchema.parse(nanoid()),
       name,
     })),
-    createdBy: { id: user.id, name: user.name },
     confirmedUsers: [
       {
         userId: user.id,
@@ -110,16 +116,11 @@ export const claimInvitation = registerMutation(
     txn,
     { groupId, invitedUserId }: z.infer<typeof claimInvitationSchema>,
   ) => {
-    const user = await getCurrentUser(txn);
-    if (!user) {
-      throw new HTTPException(401, { message: 'Not logged in' });
-    }
-
-    const group = await txn.objectStore('groups').get(groupId);
-    if (!group) {
-      txn.abort();
-      throw new HTTPException(404, { message: 'Group not found' });
-    }
+    const [user, group] = await Promise.all([
+      requireUser(txn),
+      getGroup(groupId, txn),
+    ]);
+    throwIfUndefined(group, 'Group not found');
 
     const userAlreadyConfirmed = Boolean(
       group.confirmedUsers.find(c => c.userId === user.id),
