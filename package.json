@@ -38,14 +38,14 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-promise": "^7.2.1",
     "globals": "^15.14.0",
-    "hono": "^4.6.15",
+    "hono": "^4.6.16",
     "husky": "^9.1.7",
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.2",
-    "vite": "^6.0.6"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.19.1",
+    "vite": "^6.0.7"
   },
   "commitlint": {
     "extends": [

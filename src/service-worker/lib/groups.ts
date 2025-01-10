@@ -56,6 +56,11 @@ export const getGroups = async () => {
   return db.getAll('groups');
 };
 
+export const groupCount = async () => {
+  const db = await dbPromise;
+  return db.count('groups');
+};
+
 const createGroupMutation = registerMutation(
   'group:create',
   ['groups'],

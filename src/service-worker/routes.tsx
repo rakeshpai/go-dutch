@@ -7,6 +7,9 @@ import Layout from './components/Layout';
 import { getBuildAssets } from './utils/build-assets';
 import { formDataToObject } from './utils/utils';
 import { HTTPException } from 'hono/http-exception';
+import Groups from './components/Groups';
+import { groupCount } from './lib/groups';
+import AddEditGroup from './components/AddEditGroup';
 
 const app = new Hono();
 
@@ -23,11 +26,20 @@ app.get('/', async c => {
       </PageContainer>,
     );
   }
+
+  if ((await groupCount()) === 0) {
+    return Response.redirect('/add-group');
+  }
+
   return c.render(
     <Layout title="Dashboard">
-      <div>Logged in as {currentUser.name}</div>
+      <Groups />
     </Layout>,
   );
+});
+
+app.get('/add-group', async c => {
+  return c.render(<AddEditGroup />);
 });
 
 app.post('/', async c => {
