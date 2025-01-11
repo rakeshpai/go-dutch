@@ -19,9 +19,9 @@ const groupSchema = z.object({
   key: groupKeySchema,
   name: z.string().trim().min(1),
   coverColor: z.string().optional(),
-  createdBy: z.object({ id: userIdSchema, name: z.string() }),
+  createdBy: groupUserIdSchema,
   createdOn: z.date(),
-  lastModifiedBy: z.object({ id: userIdSchema, name: z.string() }),
+  lastModifiedBy: groupUserIdSchema,
   modifiedOn: z.date(),
   users: z.array(
     z.object({
@@ -29,6 +29,7 @@ const groupSchema = z.object({
       userId: userIdSchema.optional(),
       name: z.string(),
       joinedOn: z.date().optional(),
+      isInLedger: z.boolean().optional(),
     }),
   ),
   ledgers: z.array(ledgerIdSchema),
@@ -59,13 +60,15 @@ const createGroupMutation = registerMutation(
   'group:create',
   ['groups'],
   async (txn, { group }: { group: Group }) => {
-    return txn.objectStore('groups').add(group, group.id);
+    return txn.objectStore('groups').add(group);
   },
 );
 
 export const createGroupSchema = z.object({
   name: z.string().min(1),
-  people: z.array(z.string().min(1)).optional(),
+  people: z
+    .array(z.object({ name: z.string().min(1), id: groupUserIdSchema }))
+    .optional(),
   coverColor: z.string().optional(),
 });
 
@@ -75,26 +78,27 @@ export const createGroup = async ({
   people = [],
 }: z.infer<typeof createGroupSchema>) => {
   const user = await requireUser();
+  const groupUserId = groupUserIdSchema.parse(nanoid());
 
   const group: Group = {
     id: groupIdSchema.parse(nanoid()),
     key: groupKeySchema.parse(nanoid()),
     name: name,
     coverColor,
-    createdBy: { id: user.id, name: user.name },
+    createdBy: groupUserId,
     createdOn: new Date(),
-    lastModifiedBy: { id: user.id, name: user.name },
+    lastModifiedBy: groupUserId,
     modifiedOn: new Date(),
     users: [
       {
-        groupUserId: groupUserIdSchema.parse(nanoid()),
+        groupUserId,
         userId: user.id,
         name: user.name,
         joinedOn: new Date(),
       },
-      ...people.map(name => ({
-        groupUserId: groupUserIdSchema.parse(nanoid()),
-        name,
+      ...people.map(p => ({
+        groupUserId: p.id,
+        name: p.name,
       })),
     ],
     ledgers: [],

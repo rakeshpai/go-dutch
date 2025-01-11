@@ -1,7 +1,8 @@
-import { FC } from 'hono/jsx';
-import { Group } from '../lib/groups';
+import { FC, useState } from 'hono/jsx';
 import { render } from 'hono/jsx/dom';
+import { nanoid } from 'nanoid';
 
+/*
 interface ContactPickerOptions {
   multiple?: boolean;
   include?: Array<'name' | 'email' | 'tel' | 'address' | 'icon'>;
@@ -32,27 +33,71 @@ const isContactPickerAPISupported =
   navigator.contacts &&
   'select' in navigator.contacts;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const pickContacts = () => {
   if (!isContactPickerAPISupported)
     throw new Error('Contact picker API not supported');
 
   return navigator.contacts!.select(['name'], { multiple: true });
 };
+*/
 
 type Props = {
-  users: Group['users'];
+  users: { id: string; name: string }[];
 };
 
-const ContactPickerClient: FC<Props> = ({ users }) => {
+const ContactPickerClient: FC<Props> = ({ users: receivedUsers }) => {
+  const [users, setUsers] = useState(
+    receivedUsers.length === 0
+      ? [
+          {
+            id: nanoid(),
+            name: '',
+          },
+        ]
+      : receivedUsers,
+  );
+
   return (
     <>
-      <input type="hidden" name="users" value={JSON.stringify(users)} />
-      <ul>
+      <input type="hidden" name="people" value={JSON.stringify(users)} />
+      <ul class="mb-4">
         {users.map(u => (
-          <li>{u.name}</li>
+          <li class="grid grid-cols-[1fr_50px] gap-2">
+            <input
+              type="text"
+              value={u.name}
+              placeholder="eg. Jane Doe"
+              required
+              onChange={e => {
+                setUsers(us =>
+                  us.map(usr =>
+                    // @ts-expect-error Hono types for event.target.value
+                    usr.id === u.id ? { ...usr, name: e.target.value } : usr,
+                  ),
+                );
+              }}
+            />
+            <button
+              class="bg-primary-inverted text-primary"
+              onClick={e => {
+                e.preventDefault();
+                setUsers(us => us.filter(usr => usr.id !== u.id));
+              }}
+            >
+              ✕
+            </button>
+          </li>
         ))}
       </ul>
+      <button
+        class="outline text-lg py-2"
+        onClick={e => {
+          e.preventDefault();
+          setUsers(u => [...u, { id: nanoid(), name: '' }]);
+        }}
+      >
+        + Add another person
+      </button>
     </>
   );
 };

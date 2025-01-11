@@ -1,5 +1,6 @@
 import { FC } from 'hono/jsx';
 import { getGroups } from '../lib/groups';
+import { pickFromPalette } from '../utils/utils';
 
 const NoGroups: FC = async () => {
   return (
@@ -19,10 +20,16 @@ const Groups: FC = async () => {
 
   if (groups.length) {
     return (
-      <ul>
+      <ul class="px-4 flex mt-4">
         {groups.map(group => (
-          <li>
-            <h2>{group.name}</h2>
+          <li class="border border-primary min-w-64 rounded-lg overflow-hidden">
+            <div
+              class="h-20"
+              style={{ backgroundColor: pickFromPalette(group.id)[0] }}
+            ></div>
+            <div class="py-2 px-4">
+              <h2 class="text-xl">{group.name}</h2>
+            </div>
           </li>
         ))}
       </ul>

@@ -29,7 +29,12 @@ const ContactPicker: FC<Props> = async ({ users, deletableUsers }) => {
       <div
         data-component="contact-picker"
         data-props={JSON.stringify({
-          users: users.filter(u => userIsDeletable(u)),
+          users: users
+            .filter(u => userIsDeletable(u))
+            .map(u => ({
+              id: u.groupUserId,
+              name: u.name,
+            })),
         })}
       ></div>
     </>

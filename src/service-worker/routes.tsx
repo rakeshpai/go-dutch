@@ -8,7 +8,7 @@ import { getBuildAssets } from './utils/build-assets';
 import { formDataToObject } from './utils/utils';
 import { HTTPException } from 'hono/http-exception';
 import Groups from './components/Groups';
-import { groupCount } from './lib/groups';
+import { createGroup, createGroupSchema, groupCount } from './lib/groups';
 import AddEditGroup from './components/AddEditGroup';
 
 const app = new Hono();
@@ -38,13 +38,21 @@ app.get('/', async c => {
   );
 });
 
+app.post('/', async c => {
+  const body = await c.req.formData();
+  await createUser(userPartialSchema.parse(formDataToObject(body)));
+  return Response.redirect('/');
+});
+
 app.get('/add-group', async c => {
   return c.render(<AddEditGroup />);
 });
 
-app.post('/', async c => {
-  const body = await c.req.formData();
-  await createUser(userPartialSchema.parse(formDataToObject(body)));
+app.post('/add-group', async c => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const body = formDataToObject(await c.req.formData()) as any;
+  body.people = JSON.parse(body.people);
+  await createGroup(createGroupSchema.parse(body));
   return Response.redirect('/');
 });
 

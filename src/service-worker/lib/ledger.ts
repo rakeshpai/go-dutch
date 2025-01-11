@@ -1,20 +1,20 @@
 import z from 'zod';
 import {
   groupIdSchema,
+  GroupUserId,
   groupUserIdSchema,
-  LedgerId,
   ledgerIdSchema,
-  userIdSchema,
 } from '../utils/branded-types';
 import { nanoid } from 'nanoid';
 import { registerMutation } from './mutations';
 import { requireUser } from './user';
 import { throwIfNullish } from '../utils/utils';
+import { Group } from './groups';
 
 const amountByUserSchema = z.object({
+  groupUserId: groupUserIdSchema,
   amount: z.number(),
   currency: z.string(),
-  groupUserId: groupUserIdSchema,
 });
 const ledgerEntrySchema = z.object({
   id: ledgerIdSchema,
@@ -22,21 +22,13 @@ const ledgerEntrySchema = z.object({
   title: z.string().trim().min(1),
   split: z.array(amountByUserSchema),
   spentBy: z.array(amountByUserSchema),
-  createdBy: z.object({ id: userIdSchema, name: z.string() }),
+  createdBy: groupUserIdSchema,
   createdOn: z.date(),
-  lastModifiedBy: z.object({ id: userIdSchema, name: z.string() }),
+  lastModifiedBy: groupUserIdSchema,
   modifiedOn: z.date(),
 });
 
 export type LedgerEntry = z.infer<typeof ledgerEntrySchema>;
-
-const createLedgerEntryMutation = registerMutation(
-  'ledger-entry:create',
-  ['ledger'],
-  (txn, ledgerEntry: z.infer<typeof ledgerEntrySchema>) => {
-    return txn.objectStore('ledger').add(ledgerEntry);
-  },
-);
 
 const createLedgerEntrySchema = z.object({
   groupId: groupIdSchema,
@@ -45,55 +37,128 @@ const createLedgerEntrySchema = z.object({
   spentBy: ledgerEntrySchema.shape.spentBy,
 });
 
-export const createLedgerEntry = async (
-  ledgerEntry: z.infer<typeof createLedgerEntrySchema>,
-) => {
-  const user = await requireUser();
-
-  return createLedgerEntryMutation({
-    id: ledgerIdSchema.parse(nanoid()),
-    ...createLedgerEntrySchema.parse(ledgerEntry),
-    createdBy: { id: user.id, name: user.name },
-    createdOn: new Date(),
-    lastModifiedBy: { id: user.id, name: user.name },
-    modifiedOn: new Date(),
-  });
+const usersInLedgerEntry = ({
+  spentBy,
+  split,
+}: Pick<LedgerEntry, 'spentBy' | 'split'>) => {
+  return new Set<GroupUserId>([...spentBy, ...split].map(s => s.groupUserId));
 };
 
-export const modifyLedgerEntry = registerMutation(
-  'ledger-entry:modify',
-  ['ledger'],
+type CreateLedgerEntryMutationProps = {
+  id: LedgerEntry['id'];
+  ledgerEntry: z.infer<typeof createLedgerEntrySchema>;
+  date: Date;
+};
+
+const createLedgerEntryMutation = registerMutation(
+  'ledger-entry:create',
+  ['ledger', 'groups', 'kvStore'],
   async (
     txn,
     {
-      ledgerEntryId,
-      title,
-      split,
-      spentBy,
-    }: {
-      ledgerEntryId: LedgerId;
-      title?: string;
-      split?: LedgerEntry['split'];
-      spentBy?: LedgerEntry['spentBy'];
-    },
+      ledgerEntry: { groupId, spentBy, split, title },
+      id,
+      date,
+    }: CreateLedgerEntryMutationProps,
   ) => {
-    const [user, ledgerEntry] = await Promise.all([
+    const [user, group] = await Promise.all([
       requireUser(txn),
-      txn.objectStore('ledger').get(ledgerEntryId),
+      txn.objectStore('groups').get(groupId),
     ]);
-    throwIfNullish(ledgerEntry, 'Ledger entry not found');
+    throwIfNullish(group, 'Invalid group ID');
 
-    const newLedgerEntry: LedgerEntry = {
-      ...ledgerEntry,
-      title: title ?? ledgerEntry.title,
-      split: split ?? ledgerEntry.split,
-      spentBy: spentBy ?? ledgerEntry.spentBy,
-      modifiedOn: new Date(),
-      lastModifiedBy: { id: user.id, name: user.name },
-    };
+    const userInGroup = group.users.find(u => u.userId === user.id);
+    const groupUserId =
+      userInGroup?.groupUserId || groupUserIdSchema.parse(nanoid());
 
-    return txn
-      .objectStore('ledger')
-      .put(ledgerEntrySchema.parse(newLedgerEntry));
+    const usersInEntry = usersInLedgerEntry({ spentBy, split });
+
+    const updatedGroup = {
+      ...group,
+      users: [
+        ...group.users,
+        ...(userInGroup
+          ? []
+          : [
+              {
+                groupUserId,
+                userId: user.id,
+                joinedOn: date,
+                isInLedger: true,
+                name: user.name,
+              },
+            ]),
+      ].map(u => ({
+        ...u,
+        isInLedger: usersInEntry.has(u.groupUserId) ? true : u.isInLedger,
+      })),
+    } satisfies Group;
+
+    await Promise.all([
+      txn.objectStore('groups').put(updatedGroup),
+      txn.objectStore('ledger').add({
+        id,
+        createdBy: groupUserId,
+        createdOn: date,
+        groupId,
+        lastModifiedBy: groupUserId,
+        modifiedOn: date,
+        spentBy,
+        split,
+        title,
+      }),
+    ]);
+
+    return id;
   },
 );
+
+export const createLedgerEntry = async (
+  ledgerEntryPartial: z.infer<typeof createLedgerEntrySchema>,
+) => {
+  return createLedgerEntryMutation({
+    ledgerEntry: createLedgerEntrySchema.parse(ledgerEntryPartial),
+    date: new Date(),
+    id: ledgerIdSchema.parse(nanoid()),
+  });
+};
+
+// export const modifyLedgerEntry = registerMutation(
+//   'ledger-entry:modify',
+//   ['ledger', 'groups', 'kvStore'],
+//   async (
+//     txn,
+//     {
+//       ledgerEntryId,
+//       title,
+//       split,
+//       spentBy,
+//     }: {
+//       ledgerEntryId: LedgerId;
+//       title?: string;
+//       split?: LedgerEntry['split'];
+//       spentBy?: LedgerEntry['spentBy'];
+//     },
+//   ) => {
+//     const [user, ledgerEntry] = await Promise.all([
+//       requireUser(txn),
+//       txn.objectStore('ledger').get(ledgerEntryId),
+//     ]);
+//     throwIfNullish(ledgerEntry, 'Ledger entry not found');
+
+//     const group = await txn.objectStore('groups').get(ledgerEntry.groupId);
+
+//     const newLedgerEntry: LedgerEntry = {
+//       ...ledgerEntry,
+//       title: title ?? ledgerEntry.title,
+//       split: split ?? ledgerEntry.split,
+//       spentBy: spentBy ?? ledgerEntry.spentBy,
+//       modifiedOn: new Date(),
+//       lastModifiedBy: user.id,
+//     };
+
+//     return txn
+//       .objectStore('ledger')
+//       .put(ledgerEntrySchema.parse(newLedgerEntry));
+//   },
+// );

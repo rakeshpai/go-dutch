@@ -15,7 +15,7 @@ const FirstLoad: FC = () => {
               type="text"
               name="name"
               id="name-field"
-              placeholder="e.g. John Doe"
+              placeholder="eg. John Doe"
               autocomplete="name"
               aria-labelledby="name-label"
               aria-describedby="name-description"

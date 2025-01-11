@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@rakeshpai/lens.ts':
+        specifier: ^0.5.3
+        version: 0.5.3
       idb:
         specifier: ^8.0.1
         version: 8.0.1
@@ -415,6 +418,9 @@ packages:
     resolution: {integrity: sha512-Ky+BVzPz8pL6PQxHqNRW1k3mIyv933LML7HktS8uik0bUXNCdPhoS/kLihiO1tMf/egaJb4IutXd7UywvXEW+g==}
     engines: {node: '>=18'}
     hasBin: true
+
+  '@rakeshpai/lens.ts@0.5.3':
+    resolution: {integrity: sha512-pqxt+Guqi/M/xPLDSUZM51e2a98XXEOmF5I2n/FdQzvXGPpCZkNvvbYJ61qLZz0EMcKV5x+SXAnBMtRrppnRxA==}
 
   '@rollup/rollup-android-arm-eabi@4.30.1':
     resolution: {integrity: sha512-pSWY+EVt3rJ9fQ3IqlrEUtXh3cGqGtPDH1FQlNZehO2yYxCHEX1SPsz1M//NXwYfbTlcKr9WObLnJX9FsS9K1Q==}
@@ -1890,6 +1896,8 @@ snapshots:
   '@playwright/test@1.49.1':
     dependencies:
       playwright: 1.49.1
+
+  '@rakeshpai/lens.ts@0.5.3': {}
 
   '@rollup/rollup-android-arm-eabi@4.30.1':
     optional: true
