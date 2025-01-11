@@ -13,10 +13,10 @@ export const sha256 = async (message: string) => {
   return hashHex;
 };
 
-export function throwIfUndefined<T>(
-  value: T | undefined,
+export function throwIfNullish<T>(
+  value: T | undefined | null,
   errorMessage: string,
 ): asserts value is T {
-  if (value !== undefined) return;
+  if (value !== undefined || value !== null) return;
   throw new HTTPException(404, { message: errorMessage });
 }

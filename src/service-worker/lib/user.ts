@@ -5,7 +5,7 @@ import { HTTPException } from 'hono/http-exception';
 import { userIdSchema, userKeySchema } from '../utils/branded-types';
 import { registerMutation } from './mutations';
 import { TransactionFor } from './db';
-import { throwIfUndefined } from '../utils/utils';
+import { throwIfNullish } from '../utils/utils';
 
 const currentUser = kvStoreItem(
   'currentUser',
@@ -28,7 +28,7 @@ export const requireUser = async (
   txn?: TransactionFor<'kvStore', 'readonly'>,
 ) => {
   const user = await getCurrentUser(txn);
-  throwIfUndefined(user, 'User not found');
+  throwIfNullish(user, 'User not found');
   return user;
 };
 

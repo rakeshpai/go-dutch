@@ -1,7 +1,7 @@
 import { FC } from 'hono/jsx';
-import { GroupId } from '../utils/branded-types';
+import { GroupId, GroupUserId } from '../utils/branded-types';
 import Layout from './Layout';
-import { getGroup } from '../lib/groups';
+import { deletableUsers, getGroup } from '../lib/groups';
 import ContactPicker from './ContactPicker';
 
 const AddEditGroup: FC<{ groupId?: GroupId }> = async ({ groupId }) => {
@@ -30,8 +30,10 @@ const AddEditGroup: FC<{ groupId?: GroupId }> = async ({ groupId }) => {
           </div>
           <div class="">Add people</div>
           <ContactPicker
-            pendingInvitations={group?.pendingInvitations}
-            confirmedUsers={group?.confirmedUsers}
+            users={group?.users || []}
+            deletableUsers={
+              groupId ? await deletableUsers(groupId) : new Set<GroupUserId>()
+            }
           />
         </form>
       </div>

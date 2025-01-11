@@ -4,7 +4,7 @@ import {
   groupIdSchema,
   GroupKey,
   groupKeySchema,
-  invitedUserIdSchema,
+  groupUserIdSchema,
   ledgerIdSchema,
   userIdSchema,
 } from '../utils/branded-types';
@@ -12,7 +12,7 @@ import { nanoid } from 'nanoid';
 import { dbPromise, TransactionFor } from './db';
 import { requireUser } from './user';
 import { registerMutation } from './mutations';
-import { throwIfUndefined } from '../utils/utils';
+import { throwIfNullish } from '../utils/utils';
 
 const groupSchema = z.object({
   id: groupIdSchema,
@@ -23,18 +23,12 @@ const groupSchema = z.object({
   createdOn: z.date(),
   lastModifiedBy: z.object({ id: userIdSchema, name: z.string() }),
   modifiedOn: z.date(),
-  pendingInvitations: z.array(
+  users: z.array(
     z.object({
-      id: invitedUserIdSchema,
+      groupUserId: groupUserIdSchema,
+      userId: userIdSchema.optional(),
       name: z.string(),
-    }),
-  ),
-  confirmedUsers: z.array(
-    z.object({
-      invitedId: invitedUserIdSchema.optional(),
-      userId: userIdSchema,
-      name: z.string(),
-      joinedOn: z.date(),
+      joinedOn: z.date().optional(),
     }),
   ),
   ledgers: z.array(ledgerIdSchema),
@@ -91,16 +85,17 @@ export const createGroup = async ({
     createdOn: new Date(),
     lastModifiedBy: { id: user.id, name: user.name },
     modifiedOn: new Date(),
-    pendingInvitations: people.map(name => ({
-      id: invitedUserIdSchema.parse(nanoid()),
-      name,
-    })),
-    confirmedUsers: [
+    users: [
       {
+        groupUserId: groupUserIdSchema.parse(nanoid()),
         userId: user.id,
         name: user.name,
         joinedOn: new Date(),
       },
+      ...people.map(name => ({
+        groupUserId: groupUserIdSchema.parse(nanoid()),
+        name,
+      })),
     ],
     ledgers: [],
   };
@@ -111,7 +106,7 @@ export const createGroup = async ({
 
 export const claimInvitationSchema = z.object({
   groupId: groupIdSchema,
-  invitedUserId: invitedUserIdSchema,
+  groupUserId: groupUserIdSchema,
 });
 
 export const claimInvitation = registerMutation(
@@ -119,31 +114,25 @@ export const claimInvitation = registerMutation(
   ['groups', 'kvStore'],
   async (
     txn,
-    { groupId, invitedUserId }: z.infer<typeof claimInvitationSchema>,
+    { groupId, groupUserId }: z.infer<typeof claimInvitationSchema>,
   ) => {
     const [user, group] = await Promise.all([
       requireUser(txn),
       getGroup(groupId, txn),
     ]);
-    throwIfUndefined(group, 'Group not found');
+    throwIfNullish(group, 'Group not found');
 
-    const userAlreadyConfirmed = Boolean(
-      group.confirmedUsers.find(c => c.userId === user.id),
-    );
+    const matchingGroupUser = group.users.find(u => u.groupUserId);
+    throwIfNullish(matchingGroupUser, 'The invitation is invalid');
+
+    if (matchingGroupUser.userId === user.id) return; // Everything's already done
 
     const updatedGroup: Group = {
       ...group,
-      pendingInvitations: group.pendingInvitations.filter(invite => {
-        return invite.id !== invitedUserId;
+      users: group.users.map(u => {
+        if (u.groupUserId !== groupUserId) return u;
+        return { ...u, userId: user.id, joinedOn: new Date() };
       }),
-      confirmedUsers: userAlreadyConfirmed
-        ? group.confirmedUsers
-        : group.confirmedUsers.concat({
-            invitedId: invitedUserId,
-            userId: user.id,
-            name: user.name,
-            joinedOn: new Date(),
-          }),
       modifiedOn: new Date(),
     };
 
@@ -152,6 +141,33 @@ export const claimInvitation = registerMutation(
       .put(groupSchema.parse(updatedGroup), groupId);
   },
 );
+
+export const deletableUsers = async (groupId: GroupId) => {
+  const db = await dbPromise;
+  const txn = db.transaction(['groups', 'ledger'], 'readonly');
+  const group = await txn.objectStore('groups').get(groupId);
+  throwIfNullish(group, 'Group not found');
+
+  const deletableUsers = new Set(group.users.map(u => u.groupUserId));
+
+  const cursor = await txn
+    .objectStore('ledger')
+    .index('by-group-and-date')
+    .openCursor([groupId, new Date('1970-01-01')]);
+
+  if (!cursor) throw new Error('Error getting a cursor');
+
+  for await (const ledgerEntry of cursor) {
+    ledgerEntry.value.spentBy.forEach(u =>
+      deletableUsers.delete(u.groupUserId),
+    );
+    ledgerEntry.value.split.forEach(u => deletableUsers.delete(u.groupUserId));
+
+    if (deletableUsers.size === 0) break;
+  }
+
+  return deletableUsers;
+};
 
 export const syncGroup = async (groupId: GroupId, key: GroupKey) => {
   // Get the group from remote and decript it with the key

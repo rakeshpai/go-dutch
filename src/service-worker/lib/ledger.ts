@@ -1,7 +1,7 @@
 import z from 'zod';
 import {
   groupIdSchema,
-  invitedUserIdSchema,
+  groupUserIdSchema,
   LedgerId,
   ledgerIdSchema,
   userIdSchema,
@@ -9,16 +9,13 @@ import {
 import { nanoid } from 'nanoid';
 import { registerMutation } from './mutations';
 import { requireUser } from './user';
-import { throwIfUndefined } from '../utils/utils';
+import { throwIfNullish } from '../utils/utils';
 
-const amountByUserSchema = z.intersection(
-  z.union([
-    z.object({ invitedUserId: invitedUserIdSchema }),
-    z.object({ userId: userIdSchema }),
-  ]),
-  z.object({ amount: z.number(), currency: z.string() }),
-);
-
+const amountByUserSchema = z.object({
+  amount: z.number(),
+  currency: z.string(),
+  groupUserId: groupUserIdSchema,
+});
 const ledgerEntrySchema = z.object({
   id: ledgerIdSchema,
   groupId: groupIdSchema,
@@ -84,7 +81,7 @@ export const modifyLedgerEntry = registerMutation(
       requireUser(txn),
       txn.objectStore('ledger').get(ledgerEntryId),
     ]);
-    throwIfUndefined(ledgerEntry, 'Ledger entry not found');
+    throwIfNullish(ledgerEntry, 'Ledger entry not found');
 
     const newLedgerEntry: LedgerEntry = {
       ...ledgerEntry,

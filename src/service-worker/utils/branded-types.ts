@@ -15,8 +15,8 @@ export type GroupId = z.infer<typeof groupIdSchema>;
 export const groupKeySchema = brandedIdSchema('GroupKey');
 export type GroupKey = z.infer<typeof groupKeySchema>;
 
-export const invitedUserIdSchema = brandedIdSchema('InvitedUserId');
-export type InvitedUserId = z.infer<typeof invitedUserIdSchema>;
+export const groupUserIdSchema = brandedIdSchema('GroupUserId');
+export type GroupUserId = z.infer<typeof groupUserIdSchema>;
 
 export const ledgerIdSchema = brandedIdSchema('LedgerId');
 export type LedgerId = z.infer<typeof ledgerIdSchema>;

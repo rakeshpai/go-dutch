@@ -1,6 +1,7 @@
+import { initialize as initializeContactPicker } from './service-worker/components/ContactPicker.client';
 import swScript from './service-worker/sw?worker&url';
 
-const init = async () => {
+const initSw = async () => {
   const registration = await navigator.serviceWorker.register(swScript, {
     scope: '/',
     type: 'module',
@@ -18,6 +19,11 @@ const init = async () => {
   };
 };
 
-init();
+const initComponents = () => {
+  initializeContactPicker();
+};
+
+initSw();
+initComponents();
 
 export default {};

@@ -25,7 +25,7 @@ const PageContainer: FC<Props> = ({ title, children }) => {
       </head>
       {children}
       <script
-        src={rootScriptPath ? '/' + rootScriptPath : '/src/index.ts'}
+        src={rootScriptPath ? '/' + rootScriptPath : '/src/index.tsx'}
         type="module"
       ></script>
     </html>
