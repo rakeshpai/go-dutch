@@ -18,7 +18,6 @@ const groupSchema = z.object({
   id: groupIdSchema,
   key: groupKeySchema,
   name: z.string().trim().min(1),
-  coverColor: z.string().optional(),
   createdBy: groupUserIdSchema,
   createdOn: z.date(),
   lastModifiedBy: groupUserIdSchema,
@@ -69,12 +68,10 @@ export const createGroupSchema = z.object({
   people: z
     .array(z.object({ name: z.string().min(1), id: groupUserIdSchema }))
     .optional(),
-  coverColor: z.string().optional(),
 });
 
 export const createGroup = async ({
   name,
-  coverColor,
   people = [],
 }: z.infer<typeof createGroupSchema>) => {
   const user = await requireUser();
@@ -84,7 +81,6 @@ export const createGroup = async ({
     id: groupIdSchema.parse(nanoid()),
     key: groupKeySchema.parse(nanoid()),
     name: name,
-    coverColor,
     createdBy: groupUserId,
     createdOn: new Date(),
     lastModifiedBy: groupUserId,

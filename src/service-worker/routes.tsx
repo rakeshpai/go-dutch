@@ -10,6 +10,8 @@ import { HTTPException } from 'hono/http-exception';
 import Groups from './components/Groups';
 import { createGroup, createGroupSchema, groupCount } from './lib/groups';
 import AddEditGroup from './components/AddEditGroup';
+import { groupIdSchema } from './utils/branded-types';
+import Group from './components/Group';
 
 const app = new Hono();
 
@@ -54,6 +56,11 @@ app.post('/add-group', async c => {
   body.people = JSON.parse(body.people);
   await createGroup(createGroupSchema.parse(body));
   return Response.redirect('/');
+});
+
+app.get('/groups/:group-id', async c => {
+  const groupId = groupIdSchema.parse(c.req.param('group-id'));
+  return c.render(<Group groupId={groupId} />);
 });
 
 app.notFound(async c => {

@@ -20,18 +20,34 @@ const Groups: FC = async () => {
 
   if (groups.length) {
     return (
-      <ul class="px-4 flex mt-4">
+      <ul
+        class="px-4 grid mt-4 gap-8"
+        style="grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr)"
+      >
         {groups.map(group => (
-          <li class="border border-primary min-w-64 rounded-lg overflow-hidden">
-            <div
-              class="h-20"
-              style={{ backgroundColor: pickFromPalette(group.id)[0] }}
-            ></div>
-            <div class="py-2 px-4">
-              <h2 class="text-xl">{group.name}</h2>
-            </div>
+          <li class="min-w-64">
+            <a
+              class="border border-primary rounded-lg overflow-hidden block"
+              href={`/groups/${group.id}`}
+            >
+              <div
+                class="h-20"
+                style={{ backgroundColor: pickFromPalette(group.id)[0] }}
+              ></div>
+              <div class="py-2 px-4">
+                <h2 class="text-xl">{group.name}</h2>
+              </div>
+            </a>
           </li>
         ))}
+        <li class="min-w-64">
+          <a
+            class="border border-dashed border-primary rounded-lg h-full flex items-center justify-center"
+            href="/add-group"
+          >
+            Add a new group
+          </a>
+        </li>
       </ul>
     );
   }
