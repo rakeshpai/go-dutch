@@ -31,7 +31,7 @@ const AddEditGroup: FC<{ groupId?: GroupId }> = async ({ groupId }) => {
             />
           </div>
           <div class="flex flex-col gap-2">
-            <div class="">Add people</div>
+            <div>Add people</div>
             <ContactPicker
               users={group?.users || []}
               deletableUsers={

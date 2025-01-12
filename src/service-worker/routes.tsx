@@ -54,8 +54,8 @@ app.post('/add-group', async c => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const body = formDataToObject(await c.req.formData()) as any;
   body.people = JSON.parse(body.people);
-  await createGroup(createGroupSchema.parse(body));
-  return Response.redirect('/');
+  const group = await createGroup(createGroupSchema.parse(body));
+  return Response.redirect(`/groups/${group.id}`);
 });
 
 app.get('/groups/:group-id', async c => {

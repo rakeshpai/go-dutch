@@ -79,6 +79,7 @@ const ContactPickerClient: FC<Props> = ({ users: receivedUsers }) => {
             />
             <button
               class="bg-primary-inverted text-primary"
+              type="button"
               onClick={e => {
                 e.preventDefault();
                 setUsers(us => us.filter(usr => usr.id !== u.id));
@@ -91,6 +92,7 @@ const ContactPickerClient: FC<Props> = ({ users: receivedUsers }) => {
       </ul>
       <button
         class="outline text-lg py-2"
+        type="button"
         onClick={e => {
           e.preventDefault();
           setUsers(u => [...u, { id: nanoid(), name: '' }]);
