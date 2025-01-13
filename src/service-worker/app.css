@@ -11,6 +11,10 @@
     local('Roboto-Light'), local('DroidSans'), local('Tahoma');
 }
 
+@view-transition {
+  navigation: auto;
+}
+
 html {
   color-scheme: light dark;
 }

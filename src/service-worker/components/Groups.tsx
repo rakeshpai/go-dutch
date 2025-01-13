@@ -33,10 +33,12 @@ const Groups: FC = async () => {
           >
             <div
               class="h-20"
-              style={{ backgroundColor: pickFromPalette(group.id)[0] }}
+              style={`background-color: ${pickFromPalette(group.id)[0]}; view-transition-name: ${group.id}-bg;`}
             ></div>
             <div class="py-2 px-4">
-              <h2 class="text-xl">{group.name}</h2>
+              <h2 class="text-xl" style={`view-transition-name: ${group.id}`}>
+                {group.name}
+              </h2>
             </div>
           </a>
         </li>
