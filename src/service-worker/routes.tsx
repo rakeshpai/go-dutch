@@ -8,7 +8,12 @@ import { getBuildAssets } from './utils/build-assets';
 import { formDataToObject } from './utils/utils';
 import { HTTPException } from 'hono/http-exception';
 import Groups from './components/Groups';
-import { createGroup, createGroupSchema, groupCount } from './lib/groups';
+import {
+  createGroup,
+  createGroupSchema,
+  deleteGroup,
+  groupCount,
+} from './lib/groups';
 import AddEditGroup from './components/AddEditGroup';
 import { groupIdSchema } from './utils/branded-types';
 import Group from './components/Group';
@@ -61,6 +66,14 @@ app.post('/add-group', async c => {
 app.get('/groups/:group-id', async c => {
   const groupId = groupIdSchema.parse(c.req.param('group-id'));
   return c.render(<Group groupId={groupId} />);
+});
+
+app.post('/delete-group', async c => {
+  const groupId = groupIdSchema.parse(
+    formDataToObject(await c.req.formData()).groupId,
+  );
+  await deleteGroup(groupId);
+  return Response.redirect('/');
 });
 
 app.notFound(async c => {

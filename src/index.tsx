@@ -1,4 +1,5 @@
 import { initialize as initializeContactPicker } from './service-worker/components/ContactPicker.client';
+import { init as initializeDialog } from './lib/dialog';
 import swScript from './service-worker/sw?worker&url';
 
 const initSw = async () => {
@@ -23,7 +24,12 @@ const initComponents = () => {
   initializeContactPicker();
 };
 
+const initHTMLComponents = () => {
+  initializeDialog();
+};
+
 initSw();
 initComponents();
+initHTMLComponents();
 
 export default {};

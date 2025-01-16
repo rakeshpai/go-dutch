@@ -169,6 +169,11 @@ export const deletableUsers = async (groupId: GroupId) => {
   return deletableUsers;
 };
 
+export const deleteGroup = async (groupId: GroupId) => {
+  const db = await dbPromise;
+  return db.delete('groups', groupId);
+};
+
 export const syncGroup = async (groupId: GroupId, key: GroupKey) => {
   // Get the group from remote and decript it with the key
   // Then fetch the ledgers and store them locally
